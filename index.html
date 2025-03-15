@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Management Tool</title>
+    <title>Simple E-Commerce Store</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f9;
+            padding: 50px;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
         }
         .container {
             background: white;
@@ -22,19 +20,31 @@
             width: 90%;
             max-width: 800px;
         }
-        header h1 {
+        h1, h2 {
             text-align: center;
             color: #333;
         }
-        .create-project, .projects {
-            margin-bottom: 20px;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
         }
-        input[type="text"] {
-            width: calc(100% - 120px);
-            padding: 10px;
-            margin-right: 10px;
+        #product-list div {
             border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        #product-list div img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+        #product-list div:hover {
+            transform: scale(1.05);
         }
         button {
             padding: 10px 20px;
@@ -48,113 +58,102 @@
         button:hover {
             background-color: #4a54e1;
         }
-        .project-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #fff;
+        .cart-list {
+            list-style: none;
+            padding: 0;
+        }
+        .cart-list li {
+            background: #eee;
             margin-bottom: 10px;
-            position: relative;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .project-card h3 {
-            margin: 0 0 10px;
-        }
-        .delete-btn {
+        .remove-btn {
             background-color: #ff4d4d;
-            position: absolute;
-            top: 10px;
-            right: 10px;
         }
-        .delete-btn:hover {
+        .remove-btn:hover {
             background-color: #d93636;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📚 Project Management Tool</h1>
-        </header>
-        <section class="create-project">
-            <h2>Create a New Project</h2>
-            <input type="text" id="projectName" placeholder="Project Name">
-            <button onclick="createProject()">Create Project</button>
+        <h1>🌸 Simple E-Commerce Store 🌸</h1>
+        <section>
+            <h2>Products</h2>
+            <div id="product-list" class="grid"></div>
         </section>
-        <section class="projects">
-            <h2>Projects</h2>
-            <div id="projectList"></div>
+        <section>
+            <h2>Shopping Cart 🛒</h2>
+            <ul id="cart" class="cart-list"></ul>
+            <p><strong>Total: $<span id="total-price">0</span></strong></p>
+            <button id="checkout">Checkout</button>
         </section>
     </div>
     <script>
-        let projects = JSON.parse(localStorage.getItem("projects")) || [];
-        const projectList = document.getElementById("projectList");
-
-        function createProject() {
-            const projectName = document.getElementById("projectName").value;
-            if (projectName.trim() === "") return;
-
-            const project = { id: Date.now(), name: projectName, tasks: [] };
-            projects.push(project);
-            updateLocalStorage();
-            renderProjects();
-            document.getElementById("projectName").value = "";
-        }
-
-        function deleteProject(projectId) {
-            projects = projects.filter(p => p.id !== projectId);
-            updateLocalStorage();
-            renderProjects();
-        }
-
-        function renderProjects() {
-            projectList.innerHTML = "";
-            projects.forEach(project => {
-                const projectCard = document.createElement("div");
-                projectCard.classList.add("project-card");
-                projectCard.innerHTML = `
-                    <h3>${project.name}</h3>
-                    <p>Tasks: <span>${project.tasks.length}</span></p>
-                    <button onclick="addTask(${project.id})">Add Task</button>
-                    <ul id="tasks-${project.id}"></ul>
-                    <button class="delete-btn" onclick="deleteProject(${project.id})">Delete</button>
+        const products = [
+            { id: 1, name: "Rose", price: 5, image: "https://tse2.mm.bing.net/th?id=OIP.XpPJ-5UxjoMuvzxHj1SSKAHaF7&pid=Api&P=0&h=180" },
+            { id: 2, name: "Tulip", price: 3, image: "https://tse4.mm.bing.net/th?id=OIP.nxHZBvMP_R55v4XFEgu-5wHaE3&pid=Api&P=0&h=180" },
+            { id: 3, name: "Daisy", price: 2, image: "https://tse1.mm.bing.net/th?id=OIP.N1oO9BEp_V2i3TJEm4waQgHaE8&pid=Api&P=0&h=180" }
+        ];
+        const productList = document.getElementById('product-list');
+        const cartList = document.getElementById('cart');
+        const totalPriceElement = document.getElementById('total-price');
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        displayProducts();
+        updateCart();
+        function displayProducts() {
+            productList.innerHTML = '';
+            products.forEach(product => {
+                const productDiv = document.createElement('div');
+                productDiv.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>Price: $${product.price}</p>
+                    <input type="number" value="1" min="1" id="qty-${product.id}">
+                    <button onclick="addToCart(${product.id})">Add to Cart</button>
                 `;
-                projectList.appendChild(projectCard);
-                renderTasks(project.id);
+                productList.appendChild(productDiv);
             });
         }
-
-        function addTask(projectId) {
-            const taskDesc = prompt("Enter task description:");
-            if (!taskDesc) return;
-            const project = projects.find(p => p.id === projectId);
-            project.tasks.push(taskDesc);
-            updateLocalStorage();
-            renderTasks(projectId);
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({ ...product, quantity });
+            }
+            updateCart();
+            localStorage.setItem('cart', JSON.stringify(cart));
         }
-
-        function renderTasks(projectId) {
-            const project = projects.find(p => p.id === projectId);
-            const taskList = document.getElementById(`tasks-${projectId}`);
-            taskList.innerHTML = "";
-            project.tasks.forEach((task, index) => {
-                const li = document.createElement("li");
-                li.innerHTML = `${task} <button onclick="deleteTask(${projectId}, ${index})">Remove</button>`;
-                taskList.appendChild(li);
+        function updateCart() {
+            cartList.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                const li = document.createElement('li');
+                li.innerHTML = `${item.name} - $${item.price} x ${item.quantity}
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>`;
+                cartList.appendChild(li);
             });
+            totalPriceElement.textContent = total;
         }
-
-        function deleteTask(projectId, taskIndex) {
-            const project = projects.find(p => p.id === projectId);
-            project.tasks.splice(taskIndex, 1);
-            updateLocalStorage();
-            renderTasks(projectId);
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCart();
+            localStorage.setItem('cart', JSON.stringify(cart));
         }
-
-        function updateLocalStorage() {
-            localStorage.setItem("projects", JSON.stringify(projects));
-        }
-
-        renderProjects();
+        document.getElementById('checkout').addEventListener('click', () => {
+            alert('Thank you for your purchase!');
+            cart = [];
+            updateCart();
+            localStorage.setItem('cart', JSON.stringify(cart));
+        });
     </script>
 </body>
 </html>

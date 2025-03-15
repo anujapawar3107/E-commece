@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Tool</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+        header h1 {
+            text-align: center;
+            color: #333;
+        }
+        .create-project, .projects {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: calc(100% - 120px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #5c67f2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #4a54e1;
+        }
+        .project-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .project-card h3 {
+            margin: 0 0 10px;
+        }
+        .delete-btn {
+            background-color: #ff4d4d;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .delete-btn:hover {
+            background-color: #d93636;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Project Management Tool</h1>
+        </header>
+        <section class="create-project">
+            <h2>Create a New Project</h2>
+            <input type="text" id="projectName" placeholder="Project Name">
+            <button onclick="createProject()">Create Project</button>
+        </section>
+        <section class="projects">
+            <h2>Projects</h2>
+            <div id="projectList"></div>
+        </section>
+    </div>
+    <script>
+        let projects = JSON.parse(localStorage.getItem("projects")) || [];
+        const projectList = document.getElementById("projectList");
+
+        function createProject() {
+            const projectName = document.getElementById("projectName").value;
+            if (projectName.trim() === "") return;
+
+            const project = { id: Date.now(), name: projectName, tasks: [] };
+            projects.push(project);
+            updateLocalStorage();
+            renderProjects();
+            document.getElementById("projectName").value = "";
+        }
+
+        function deleteProject(projectId) {
+            projects = projects.filter(p => p.id !== projectId);
+            updateLocalStorage();
+            renderProjects();
+        }
+
+        function renderProjects() {
+            projectList.innerHTML = "";
+            projects.forEach(project => {
+                const projectCard = document.createElement("div");
+                projectCard.classList.add("project-card");
+                projectCard.innerHTML = `
+                    <h3>${project.name}</h3>
+                    <p>Tasks: <span>${project.tasks.length}</span></p>
+                    <button onclick="addTask(${project.id})">Add Task</button>
+                    <ul id="tasks-${project.id}"></ul>
+                    <button class="delete-btn" onclick="deleteProject(${project.id})">Delete</button>
+                `;
+                projectList.appendChild(projectCard);
+                renderTasks(project.id);
+            });
+        }
+
+        function addTask(projectId) {
+            const taskDesc = prompt("Enter task description:");
+            if (!taskDesc) return;
+            const project = projects.find(p => p.id === projectId);
+            project.tasks.push(taskDesc);
+            updateLocalStorage();
+            renderTasks(projectId);
+        }
+
+        function renderTasks(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            const taskList = document.getElementById(`tasks-${projectId}`);
+            taskList.innerHTML = "";
+            project.tasks.forEach((task, index) => {
+                const li = document.createElement("li");
+                li.innerHTML = `${task} <button onclick="deleteTask(${projectId}, ${index})">Remove</button>`;
+                taskList.appendChild(li);
+            });
+        }
+
+        function deleteTask(projectId, taskIndex) {
+            const project = projects.find(p => p.id === projectId);
+            project.tasks.splice(taskIndex, 1);
+            updateLocalStorage();
+            renderTasks(projectId);
+        }
+
+        function updateLocalStorage() {
+            localStorage.setItem("projects", JSON.stringify(projects));
+        }
+
+        renderProjects();
+    </script>
+</body>
+</html>
